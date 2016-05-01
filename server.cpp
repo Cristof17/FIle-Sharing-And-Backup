@@ -16,6 +16,7 @@
 #define DEFAULT_CMD 1
 #define LOGIN_BRUTE_FORCE 2
 #define QUIT_CMD 3
+#define LOGOUT_CMD 4
 
 /*
  * Responses
@@ -23,6 +24,9 @@
 #define SUCCESS 100000
 #define USER_OR_PASS_WRONG -3
 #define ALREADY_LOGGED_IN -2
+
+#define LOGOUT_INVALID_USER -1
+#define LOGOUT_SUCCESSFUL 1001
 
 /*
  * Globals
@@ -77,6 +81,8 @@ int get_command_code(char *command)
 		return LOGIN_CMD;
 	else if (strcmp(command, "quit") == 0)
 		return QUIT_CMD;
+	else if (strcmp(command, "logout") == 0)
+		return LOGOUT_CMD;
 
 	return DEFAULT_CMD;
 }
@@ -107,6 +113,29 @@ int login(login_params_t *params)
 		return LOGIN_BRUTE_FORCE;
 	return USER_OR_PASS_WRONG;
 }
+
+int logout(int user_connection)
+{
+	/*
+	 * If the user has not been authenticated
+	 * it means he does not exist in the users list
+	 */
+	if (users[user_connection] == NULL)
+		return LOGOUT_INVALID_USER;
+	user_t *user = users[user_connection];
+	/*
+	 * The user exists and we must log him out
+	 * which means deleting the reference;
+	 */
+	 free(user->username);
+	 user->username = NULL;
+	 free(user);
+	 user = NULL;
+	 users[user_connection] = NULL;
+	 return LOGOUT_SUCCESSFUL;
+
+}
+
 
 void send_client_code(int fd, int code)
 {
@@ -315,10 +344,34 @@ int main(int argc, char ** argv)
 									default:
 										break;
 								}
+								break;
 							} //endcase LOGIN_CMD;
+							case LOGOUT_CMD:
+							{
+								/*
+								 *
+								 */
+								 result = logout(i);
+								 switch(result) {
+									case LOGOUT_INVALID_USER:
+									{
+										printf("-1 Clientul nu este autentificat");
+										send_client_code(i, -1);
+										break;
+									}
+									case LOGOUT_SUCCESSFUL:
+									{
+										printf("Logout successfull\n");
+										send_client_code(i, LOGOUT_SUCCESSFUL);
+										break;
+									}
+									default:
+										break;
+								 }
+								 break;
+							}
 							default:
 							{
-								//send_client_code(i, DEFAULT_CMD);
 								break;
 							}
 						} //endswitch code

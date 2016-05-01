@@ -24,6 +24,10 @@ using namespace std;
 #define QUIT_CMD 10
 #define DEFAULT_CMD 1
 
+#define LOGOUT_INVALID_USER -1
+#define LOGOUT_SUCCESSFUL 1001
+
+
 /*
  * All about server socket
  */
@@ -167,7 +171,6 @@ int main(int argc, char ** argv)
 				/*
 				 * Quit
 				 */
-				printf("Ajung aici \n");
 				if (get_command_code(buffer) == QUIT_CMD) {
 					close(sockfd);
 					exit(0);
@@ -175,7 +178,6 @@ int main(int argc, char ** argv)
 				/*
 				 * Send the command to server
 				 */
-				printf("Sending information\n");
 				send(sockfd, buffer, BUFLEN, 0);
 				/*
 				 * Log the command
@@ -189,9 +191,7 @@ int main(int argc, char ** argv)
 				 * I have not send any information and that
 				 * what I received from stdin was empty
 				 */
-				printf("BUFFER IN FD IS %s\n", buffer);
 				if (check_buffer_empty(buffer) || (strlen(buffer) <= 1)) {
-					printf("Buffer is empty in FD\n");
 					memset(buffer, 0 , BUFLEN);
 					continue;
 				}
@@ -228,6 +228,20 @@ int main(int argc, char ** argv)
 						write_log(message);
 						memset(buffer, 0, BUFLEN);
 						recv(sockfd, prompt, BUFLEN, 0);
+						break;
+					}
+					case LOGOUT_INVALID_USER:
+					{
+						printf("-1 Clientul nu e autentificat");
+						char message[] = "-1 Clientul nu e autentificat\n";
+						write_log(message);
+						memset(buffer, 0, BUFLEN);
+						break;
+					}
+					case LOGOUT_SUCCESSFUL:
+					{
+						memset(prompt, 0, BUFLEN);
+						memset(buffer, 0, BUFLEN);
 						break;
 					}
 					case DEFAULT_CMD:
