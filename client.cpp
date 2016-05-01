@@ -189,6 +189,7 @@ int main(int argc, char ** argv)
 				 * I have not send any information and that
 				 * what I received from stdin was empty
 				 */
+				printf("BUFFER IN FD IS %s\n", buffer);
 				if (check_buffer_empty(buffer) || (strlen(buffer) <= 1)) {
 					printf("Buffer is empty in FD\n");
 					memset(buffer, 0 , BUFLEN);
@@ -208,17 +209,23 @@ int main(int argc, char ** argv)
 						 */
 						memset(prompt, 0 , BUFLEN);
 						recv(sockfd, prompt, BUFLEN, 0);
-						printf("Receiving promot %s\n", prompt);
+						char message[] = "Login successful\n";
+						write_log(message);
+						memset(buffer, 0, BUFLEN);
 						break;
 					}
 					case LOGIN_BRUTE_FORCE:
 					{
 						printf("-8 Brute force detectat\n");
+						char message[] = "-8 Brute force detectat\n";
+						write_log(message);
 						break;
 					}
 					case ALREADY_LOGGED_IN:
 					{
 						printf("-2 Sesiune deja deschisa\n");
+						char message[] = "-2 Sesiune deja deschisa\n";
+						write_log(message);
 						memset(buffer, 0, BUFLEN);
 						recv(sockfd, prompt, BUFLEN, 0);
 						break;
@@ -228,14 +235,11 @@ int main(int argc, char ** argv)
 						break;
 					}
 					default:
-						printf("Received = %s\n", buffer);
-						printf("Prompt = %s\n", prompt);
 						break;
 				}
 			}
 
 			else {
-				memset(buffer, 0, BUFLEN);
 				//result = read(sockfd, buffer, BUFLEN);
 				if (result <= 0) {
 					perror("Error when client receiving\n");
