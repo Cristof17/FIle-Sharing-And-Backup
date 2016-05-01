@@ -1,0 +1,60 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+ALREADY_LOGGED_IN	client.cpp	21;"	d	file:
+ALREADY_LOGGED_IN	server.cpp	25;"	d	file:
+BUFLEN	client.cpp	16;"	d	file:
+BUFLEN	server.cpp	30;"	d	file:
+DEFAULT_CMD	client.cpp	25;"	d	file:
+DEFAULT_CMD	server.cpp	16;"	d	file:
+LOGIN_BRUTE_FORCE	client.cpp	20;"	d	file:
+LOGIN_BRUTE_FORCE	server.cpp	17;"	d	file:
+LOGIN_CMD	server.cpp	15;"	d	file:
+MAX_USERS	server.cpp	31;"	d	file:
+PORT	Makefile	/^PORT=5556$/;"	m
+QUIT_CMD	client.cpp	24;"	d	file:
+QUIT_CMD	server.cpp	18;"	d	file:
+SUCCESS	client.cpp	19;"	d	file:
+SUCCESS	server.cpp	23;"	d	file:
+USER_OR_PASS_WRONG	server.cpp	24;"	d	file:
+buffer	client.cpp	/^char buffer[BUFLEN];$/;"	v
+check_buffer_empty	client.cpp	/^bool check_buffer_empty(char *buffer)$/;"	f
+client_addr	server.cpp	/^struct sockaddr_in client_addr;$/;"	v	typeref:struct:sockaddr_in
+client_file_fd	client.cpp	/^int client_file_fd;$/;"	v
+client_sock	server.cpp	/^int client_sock;$/;"	v
+fd	server.cpp	/^	int fd;$/;"	m	struct:user	file:
+fdmax	client.cpp	/^int fdmax;$/;"	v
+fdmax	server.cpp	/^ int fdmax;$/;"	v
+get_command_code	client.cpp	/^int get_command_code(char *command)$/;"	f
+get_command_code	server.cpp	/^int get_command_code(char *command)$/;"	f
+login	server.cpp	/^int login(login_params_t *params)$/;"	f
+login_attempt	server.cpp	/^int login_attempt;$/;"	v
+login_params	server.cpp	/^typedef struct login_params {$/;"	s	file:
+login_params_t	server.cpp	/^} login_params_t;$/;"	t	typeref:struct:login_params	file:
+main	client.cpp	/^int main(int argc, char ** argv)$/;"	f
+main	server.cpp	/^int main(int argc, char ** argv)$/;"	f
+main	testVim.c	/^int main(int argc, char ** argv)$/;"	f
+modified	client.cpp	/^fd_set modified;$/;"	v
+modified	server.cpp	/^ fd_set modified;$/;"	v
+original	client.cpp	/^fd_set original;$/;"	v
+original	server.cpp	/^ fd_set original;$/;"	v
+password	server.cpp	/^	char password[BUFLEN];$/;"	m	struct:login_params	file:
+result	client.cpp	/^int result;$/;"	v
+result	server.cpp	/^int result;$/;"	v
+send_client_code	server.cpp	/^void send_client_code(int fd, int code)$/;"	f
+send_client_message	server.cpp	/^void send_client_message(int fd, char *message)$/;"	f
+server_addr	client.cpp	/^struct sockaddr_in server_addr;$/;"	v	typeref:struct:sockaddr_in
+server_addr	server.cpp	/^struct sockaddr_in server_addr;$/;"	v	typeref:struct:sockaddr_in
+server_sock	server.cpp	/^int server_sock;$/;"	v
+shared_file	server.cpp	/^ FILE *shared_file;$/;"	v
+sockfd	client.cpp	/^int sockfd;$/;"	v
+user	server.cpp	/^typedef struct user{$/;"	s	file:
+user_file	server.cpp	/^ FILE *user_file; $/;"	v
+user_t	server.cpp	/^} user_t;$/;"	t	typeref:struct:user	file:
+username	server.cpp	/^	char *username;$/;"	m	struct:user	file:
+username	server.cpp	/^	char username[BUFLEN];$/;"	m	struct:login_params	file:
+users	server.cpp	/^user_t **users;$/;"	v
+write_log	client.cpp	/^void write_log(char *buff)$/;"	f
