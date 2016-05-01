@@ -277,6 +277,7 @@ int main(int argc, char ** argv)
 										if (users != NULL && users[i] != NULL) {
 											send_client_code(i, ALREADY_LOGGED_IN); 
 											printf("Sent -2 already authenticated\n");
+											send(i, users[i]->username, BUFLEN, 0);
 											break;
 										} else {
 											send_client_code(i, SUCCESS);

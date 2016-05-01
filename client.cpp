@@ -138,7 +138,6 @@ int main(int argc, char ** argv)
 
 	while(1) {
 
-		memset(buffer, 0, BUFLEN);
 		printf("Buffer = %s\n",buffer);
 		modified = original;
 		fputs(prompt, stdout);
@@ -160,7 +159,7 @@ int main(int argc, char ** argv)
 			 */
 			if (i == STDIN_FILENO) {
 				read(STDIN_FILENO, buffer, BUFLEN);
-				if (check_buffer_empty(buffer) || (strlen(buffer) <= 2)) {
+				if (check_buffer_empty(buffer) || (strlen(buffer) <= 1)) {
 					printf("Buffer is empty\n");
 					memset(buffer, 0 , BUFLEN);
 					continue;
@@ -168,6 +167,7 @@ int main(int argc, char ** argv)
 				/*
 				 * Quit
 				 */
+				printf("Ajung aici \n");
 				if (get_command_code(buffer) == QUIT_CMD) {
 					close(sockfd);
 					exit(0);
@@ -175,6 +175,7 @@ int main(int argc, char ** argv)
 				/*
 				 * Send the command to server
 				 */
+				printf("Sending information\n");
 				send(sockfd, buffer, BUFLEN, 0);
 				/*
 				 * Log the command
@@ -183,6 +184,17 @@ int main(int argc, char ** argv)
 			}
 			
 			else if (i == sockfd) {
+				/*
+				 * If the buffer is empty, it means
+				 * I have not send any information and that
+				 * what I received from stdin was empty
+				 */
+				if (check_buffer_empty(buffer) || (strlen(buffer) <= 1)) {
+					printf("Buffer is empty in FD\n");
+					memset(buffer, 0 , BUFLEN);
+					continue;
+				}
+				memset(buffer, 0, BUFLEN);
 				result = recv(sockfd, buffer, BUFLEN, 0);
 				printf("Received %d bytes\n", result);
 				printf("Received = %s on %d\n", buffer, i);
@@ -207,6 +219,8 @@ int main(int argc, char ** argv)
 					case ALREADY_LOGGED_IN:
 					{
 						printf("-2 Sesiune deja deschisa\n");
+						memset(buffer, 0, BUFLEN);
+						recv(sockfd, prompt, BUFLEN, 0);
 						break;
 					}
 					case DEFAULT_CMD:
