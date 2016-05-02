@@ -5,26 +5,27 @@
 !_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
 !_TAG_PROGRAM_VERSION	5.9~svn20110310	//
 ALREADY_LOGGED_IN	client.cpp	21;"	d	file:
-ALREADY_LOGGED_IN	server.cpp	26;"	d	file:
+ALREADY_LOGGED_IN	server.cpp	27;"	d	file:
 BUFLEN	client.cpp	16;"	d	file:
-BUFLEN	server.cpp	34;"	d	file:
+BUFLEN	server.cpp	35;"	d	file:
 DEFAULT_CMD	client.cpp	25;"	d	file:
 DEFAULT_CMD	server.cpp	16;"	d	file:
+GET_USER_LIST_CMD	server.cpp	20;"	d	file:
 LOGIN_BRUTE_FORCE	client.cpp	20;"	d	file:
 LOGIN_BRUTE_FORCE	server.cpp	17;"	d	file:
 LOGIN_CMD	server.cpp	15;"	d	file:
 LOGOUT_CMD	server.cpp	19;"	d	file:
 LOGOUT_INVALID_USER	client.cpp	27;"	d	file:
-LOGOUT_INVALID_USER	server.cpp	28;"	d	file:
+LOGOUT_INVALID_USER	server.cpp	29;"	d	file:
 LOGOUT_SUCCESSFUL	client.cpp	28;"	d	file:
-LOGOUT_SUCCESSFUL	server.cpp	29;"	d	file:
-MAX_USERS	server.cpp	35;"	d	file:
-PORT	Makefile	/^PORT=5556$/;"	m
+LOGOUT_SUCCESSFUL	server.cpp	30;"	d	file:
+MAX_USERS	server.cpp	36;"	d	file:
+PORT	Makefile	/^PORT=5557$/;"	m
 QUIT_CMD	client.cpp	24;"	d	file:
 QUIT_CMD	server.cpp	18;"	d	file:
 SUCCESS	client.cpp	19;"	d	file:
-SUCCESS	server.cpp	24;"	d	file:
-USER_OR_PASS_WRONG	server.cpp	25;"	d	file:
+SUCCESS	server.cpp	25;"	d	file:
+USER_OR_PASS_WRONG	server.cpp	26;"	d	file:
 buffer	client.cpp	/^char buffer[BUFLEN];$/;"	v
 check_buffer_empty	client.cpp	/^bool check_buffer_empty(char *buffer)$/;"	f
 client_addr	server.cpp	/^struct sockaddr_in client_addr;$/;"	v	typeref:struct:sockaddr_in
@@ -35,6 +36,8 @@ fdmax	client.cpp	/^int fdmax;$/;"	v
 fdmax	server.cpp	/^ int fdmax;$/;"	v
 get_command_code	client.cpp	/^int get_command_code(char *command)$/;"	f
 get_command_code	server.cpp	/^int get_command_code(char *command)$/;"	f
+get_users_from_file	server.cpp	/^void get_users_from_file(user_t **out)$/;"	f
+get_users_in_order	server.cpp	/^void get_users_in_order(user_t **users_from_file, user_t ** users, user_t **output_users){$/;"	f
 login	server.cpp	/^int login(login_params_t *params)$/;"	f
 login_attempt	server.cpp	/^int login_attempt;$/;"	v
 login_params	server.cpp	/^typedef struct login_params {$/;"	s	file:

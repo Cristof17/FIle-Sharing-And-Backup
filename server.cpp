@@ -17,6 +17,7 @@
 #define LOGIN_BRUTE_FORCE 2
 #define QUIT_CMD 3
 #define LOGOUT_CMD 4
+#define GET_USER_LIST_CMD 5
 
 /*
  * Responses
@@ -83,6 +84,8 @@ int get_command_code(char *command)
 		return QUIT_CMD;
 	else if (strcmp(command, "logout") == 0)
 		return LOGOUT_CMD;
+	else if (strcmp(command, "getuserlist") == 0)
+		return GET_USER_LIST_CMD;
 
 	return DEFAULT_CMD;
 }
@@ -152,6 +155,104 @@ void send_client_message(int fd, char *message)
 	memset(buf, 0, BUFLEN);
 	memcpy(buf, message, BUFLEN);
 	send(fd, buf, BUFLEN, 0);
+}
+
+/*
+ * Get the list of users from the file
+ */
+void get_users_from_file(user_t **out)
+{
+	int N = 0;
+	int curr = 0;
+	char dummy_pass[BUFLEN];
+	memset(dummy_pass, 0, BUFLEN);
+	/*
+	 * Position cursor at the beginning of the file
+	 * (Others calls might have moved the cursor)
+	 */
+	fseek(user_file, 0, SEEK_SET);
+	/*
+	 * Get the number of users allowed and
+	 * alloc an array of size <number_of_users>
+	 */
+	fscanf(user_file, "%d", &N);
+	printf("read N = %d\n", N);
+	/*
+	 * Read the users. (just the first word of each row)
+	 */
+	 for (int i = 0; i < N; ++i) {
+		out[curr] = (user_t *)malloc(1 * sizeof(user_t));
+		out[curr]->username = (char *) malloc(BUFLEN * sizeof(char));
+		fscanf(user_file, "%s %s", out[curr]->username, dummy_pass);
+		printf("Username got is %s\n", out[curr]->username);
+		curr++;
+	 }
+	 printf("Finished reading users from file \n");
+}
+
+void get_users_in_order(user_t **users_from_file, user_t ** users, user_t **output_users){
+
+	int N; //number of users
+	int curr; //current found users
+
+	fseek(user_file, 0, SEEK_SET);
+	fscanf(user_file, "%d", &N);
+	for (int i = 0; i < N; ++i) {
+		user_t *file_user = users_from_file[i];
+		printf("Working with user %s\n", file_user->username);
+		for (int j = 0; j < MAX_USERS; ++j) {
+
+			/*
+			 * There is no user authenticated
+			 */
+			if(users == NULL)
+			{
+				return;
+			}
+			/*
+			 * No user has logged in on the j fd.
+			 * Remember that users is an array that contains
+			 * on the fd position, a structure user_t containing
+			 * the username of the username connected on the fd socket id
+			 */
+			if (users[j] == NULL){
+				continue;
+			}
+
+			/*
+			 * Maybe there has been a deallocation of the username,
+			 * but the user may still be referenced by the "array"
+			 * thus users[j] != NULL and users[j]->username == NULL
+			 */
+			if(users[j]->username == NULL){
+				continue;
+			}
+
+			if (strcmp(file_user->username, users[j]->username) == 0) {
+						printf("on fd = %d user = %s\n",j, file_user->username);
+					/*
+					 * Alloc memory when we have users to add
+					 * else the output remains empty meaning that
+					 * no user exists in the list of users and this means
+					 * no user has authenticated
+					 */
+					if (output_users == NULL)
+						output_users = (user_t **) malloc (MAX_USERS * sizeof(user_t *));
+					/*
+					 * Add the new user to the ordered list of authenticated users
+					 */
+					printf("AAA\n");
+					if (output_users[curr] == NULL)
+						output_users[curr] = (user_t *) malloc (1 * sizeof(user_t));
+					if (output_users[curr]->username == NULL)
+						output_users[curr]->username = (char *)malloc(BUFLEN * sizeof(char));
+					printf("BBBBB\n");
+					memcpy(output_users[curr]->username, users[j]->username, BUFLEN);
+					curr++;
+			}
+		}
+	}
+	printf("Yes\n");
 }
 
 int main(int argc, char ** argv)
@@ -369,6 +470,37 @@ int main(int argc, char ** argv)
 										break;
 								 }
 								 break;
+							}
+							case GET_USER_LIST_CMD:
+							{
+								/*
+								 * Get the users from file
+								 */
+								user_t **users_from_file;
+								user_t *output_users = NULL;
+								if (users_from_file == NULL)
+									printf("Users from file is null\n");
+
+								if (output_users == NULL)
+									printf("Output_users file is null\n");
+
+								get_users_from_file(users_from_file);
+								for (int i = 0; i < 3; ++i){
+									printf("Got user %s\n", users_from_file[i]->username);
+								}
+								/*
+								 * Get logged in users
+								 */
+								get_users_in_order(users_from_file, users, &output_users);
+								if (output_users == NULL){
+									printf("No user has been authenticated\n");
+									break;
+								} else {
+									for (int i = 0; i < 1; ++i){
+										printf("Got user %s\n", output_users[i].username);
+									}
+								}
+								break;
 							}
 							default:
 							{
