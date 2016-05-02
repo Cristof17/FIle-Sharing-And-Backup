@@ -28,6 +28,8 @@
 
 #define LOGOUT_INVALID_USER -1
 #define LOGOUT_SUCCESSFUL 1001
+#define GETUSERLIST_SUCCESSFUL 1002
+#define GETUSERLIST_EMPTY 1003
 
 /*
  * Globals
@@ -190,10 +192,10 @@ void get_users_from_file(user_t **out)
 	 printf("Finished reading users from file \n");
 }
 
-void get_users_in_order(user_t **users_from_file, user_t ** users, user_t **output_users){
+int get_users_in_order(user_t **users_from_file, user_t ** users, user_t **output_users){
 
-	int N; //number of users
-	int curr; //current found users
+	int N = 0; //number of users
+	int curr = 0; //current found users
 
 	fseek(user_file, 0, SEEK_SET);
 	fscanf(user_file, "%d", &N);
@@ -207,7 +209,7 @@ void get_users_in_order(user_t **users_from_file, user_t ** users, user_t **outp
 			 */
 			if(users == NULL)
 			{
-				return;
+				return curr;
 			}
 			/*
 			 * No user has logged in on the j fd.
@@ -237,22 +239,28 @@ void get_users_in_order(user_t **users_from_file, user_t ** users, user_t **outp
 					 * no user has authenticated
 					 */
 					if (output_users == NULL)
-						output_users = (user_t **) malloc (MAX_USERS * sizeof(user_t *));
+						*output_users = (user_t *) malloc (MAX_USERS * sizeof(user_t));
 					/*
 					 * Add the new user to the ordered list of authenticated users
 					 */
-					printf("AAA\n");
 					if (output_users[curr] == NULL)
 						output_users[curr] = (user_t *) malloc (1 * sizeof(user_t));
 					if (output_users[curr]->username == NULL)
 						output_users[curr]->username = (char *)malloc(BUFLEN * sizeof(char));
-					printf("BBBBB\n");
 					memcpy(output_users[curr]->username, users[j]->username, BUFLEN);
 					curr++;
 			}
 		}
 	}
-	printf("Yes\n");
+	return curr;
+}
+
+int get_users_from_file_count()
+{
+	int N;
+	fseek(user_file, 0, SEEK_SET);
+	fscanf(user_file, "%d", &N);
+	return N;
 }
 
 int main(int argc, char ** argv)
@@ -473,31 +481,52 @@ int main(int argc, char ** argv)
 							}
 							case GET_USER_LIST_CMD:
 							{
+								int N; //alloc space for output users
+								int user_no = 0;
+
+								N = get_users_from_file_count();
 								/*
 								 * Get the users from file
 								 */
 								user_t **users_from_file;
-								user_t *output_users = NULL;
+								user_t **output_users = NULL;
 								if (users_from_file == NULL)
 									printf("Users from file is null\n");
 
-								if (output_users == NULL)
-									printf("Output_users file is null\n");
-
+								output_users = (user_t **) malloc(N * sizeof(user_t *));
 								get_users_from_file(users_from_file);
-								for (int i = 0; i < 3; ++i){
-									printf("Got user %s\n", users_from_file[i]->username);
-								}
 								/*
 								 * Get logged in users
 								 */
-								get_users_in_order(users_from_file, users, &output_users);
+								user_no = get_users_in_order(users_from_file, users, output_users);
+								printf("No of users = %d\n", user_no);
 								if (output_users == NULL){
 									printf("No user has been authenticated\n");
 									break;
 								} else {
-									for (int i = 0; i < 1; ++i){
-										printf("Got user %s\n", output_users[i].username);
+									/*
+									 * Check if there is no user logged in 
+									 */
+									if (user_no == 0) {
+										send_client_code(i, GETUSERLIST_EMPTY);
+										break;
+									}
+									/*
+									 * Send code for successfull command
+									 */
+									send_client_code(i, GETUSERLIST_SUCCESSFUL);
+									/*
+									 * Send the number of users first
+									 */
+									char message[BUFLEN] = "";
+									sprintf(message, "%d", user_no);
+									send_client_message(i, message);
+									for (int j = 0; j < user_no; ++j){
+										printf("Got user %s\n", output_users[j]->username);
+										/*
+										 * Send the username of each logged in user
+										 */
+										send_client_message(i, output_users[j]->username);
 									}
 								}
 								break;

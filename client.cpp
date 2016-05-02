@@ -26,7 +26,8 @@ using namespace std;
 
 #define LOGOUT_INVALID_USER -1
 #define LOGOUT_SUCCESSFUL 1001
-
+#define GETUSERLIST_SUCCESSFUL 1002
+#define GETUSERLIST_EMPTY 1003
 
 /*
  * All about server socket
@@ -142,7 +143,6 @@ int main(int argc, char ** argv)
 
 	while(1) {
 
-		printf("Buffer = %s\n",buffer);
 		modified = original;
 		fputs(prompt, stdout);
 		fputs(">", stdout);
@@ -244,6 +244,30 @@ int main(int argc, char ** argv)
 						memset(buffer, 0, BUFLEN);
 						break;
 					}
+					case GETUSERLIST_SUCCESSFUL:
+					{
+						int N; //number of users
+						/*
+						 * Get the number of users
+						 */
+						memset(buffer, 0, BUFLEN);	
+						recv(i, buffer, BUFLEN, 0);
+						N = atoi(buffer);
+						/*
+						 * Receive the name of each user
+						 */ 
+						for (int j = 0; j < N; ++j) {
+							recv(i, buffer, BUFLEN, 0);
+							printf("%s\n",buffer);
+							write_log(buffer);
+							memset(buffer, 0, BUFLEN);
+						}
+						break;
+					}
+					case GETUSERLIST_EMPTY:
+					{
+						break;
+					}
 					case DEFAULT_CMD:
 					{
 						break;
@@ -258,7 +282,7 @@ int main(int argc, char ** argv)
 				if (result <= 0) {
 					perror("Error when client receiving\n");
 				}
-				printf("Received %s from %d \n", buffer, i);
+				//printf("Received %s from %d \n", buffer, i);
 			}
 		}
 	}

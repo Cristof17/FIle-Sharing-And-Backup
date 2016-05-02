@@ -1,4 +1,4 @@
-PORT=5557
+PORT=5556
 
 all:clean server client
 
