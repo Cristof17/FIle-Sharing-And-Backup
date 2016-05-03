@@ -5,39 +5,44 @@
 !_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
 !_TAG_PROGRAM_VERSION	5.9~svn20110310	//
 ALREADY_LOGGED_IN	client.cpp	21;"	d	file:
-ALREADY_LOGGED_IN	server.cpp	35;"	d	file:
+ALREADY_LOGGED_IN	server.cpp	37;"	d	file:
 BUFLEN	client.cpp	16;"	d	file:
-BUFLEN	server.cpp	48;"	d	file:
+BUFLEN	server.cpp	51;"	d	file:
+CHUNK_SIZE	server.cpp	53;"	d	file:
 DEFAULT_CMD	client.cpp	25;"	d	file:
 DEFAULT_CMD	server.cpp	23;"	d	file:
-FILE_NOT_FOUND	server.cpp	54;"	d	file:
-GETFILELIST_FAIL	client.cpp	32;"	d	file:
-GETFILELIST_FAIL	server.cpp	43;"	d	file:
-GETFILELIST_SUCCESSFUL	client.cpp	31;"	d	file:
-GETFILELIST_SUCCESSFUL	server.cpp	42;"	d	file:
-GETUSERLIST_EMPTY	client.cpp	30;"	d	file:
-GETUSERLIST_EMPTY	server.cpp	41;"	d	file:
-GETUSERLIST_SUCCESSFUL	client.cpp	29;"	d	file:
-GETUSERLIST_SUCCESSFUL	server.cpp	40;"	d	file:
+DOWNLOAD_CMD	server.cpp	30;"	d	file:
+FILE_NOT_FOUND	server.cpp	58;"	d	file:
+GETFILELIST_FAIL	client.cpp	33;"	d	file:
+GETFILELIST_FAIL	server.cpp	46;"	d	file:
+GETFILELIST_SUCCESSFUL	client.cpp	32;"	d	file:
+GETFILELIST_SUCCESSFUL	server.cpp	45;"	d	file:
+GETUSERLIST_EMPTY	client.cpp	31;"	d	file:
+GETUSERLIST_EMPTY	server.cpp	44;"	d	file:
+GETUSERLIST_SUCCESSFUL	client.cpp	30;"	d	file:
+GETUSERLIST_SUCCESSFUL	server.cpp	43;"	d	file:
 GET_FILE_LIST_CMD	server.cpp	28;"	d	file:
 GET_USER_LIST_CMD	server.cpp	27;"	d	file:
 LOGIN_BRUTE_FORCE	client.cpp	20;"	d	file:
 LOGIN_BRUTE_FORCE	server.cpp	24;"	d	file:
 LOGIN_CMD	server.cpp	22;"	d	file:
 LOGOUT_CMD	server.cpp	26;"	d	file:
-LOGOUT_INVALID_USER	client.cpp	27;"	d	file:
-LOGOUT_INVALID_USER	server.cpp	37;"	d	file:
-LOGOUT_SUCCESSFUL	client.cpp	28;"	d	file:
-LOGOUT_SUCCESSFUL	server.cpp	39;"	d	file:
-MAX_USERS	server.cpp	49;"	d	file:
+LOGOUT_INVALID_USER	client.cpp	28;"	d	file:
+LOGOUT_INVALID_USER	server.cpp	40;"	d	file:
+LOGOUT_SUCCESSFUL	client.cpp	29;"	d	file:
+LOGOUT_SUCCESSFUL	server.cpp	42;"	d	file:
+MAX_USERS	server.cpp	52;"	d	file:
+NOT_LOGGED_IN	server.cpp	39;"	d	file:
 PORT	Makefile	/^PORT=5556$/;"	m
 QUIT_CMD	client.cpp	24;"	d	file:
 QUIT_CMD	server.cpp	25;"	d	file:
 SUCCESS	client.cpp	19;"	d	file:
-SUCCESS	server.cpp	33;"	d	file:
-UNKNOWN_USER	client.cpp	33;"	d	file:
-UNKNOWN_USER	server.cpp	38;"	d	file:
-USER_OR_PASS_WRONG	server.cpp	34;"	d	file:
+SUCCESS	server.cpp	35;"	d	file:
+UNKNOWN_USER	client.cpp	34;"	d	file:
+UNKNOWN_USER	server.cpp	41;"	d	file:
+UPLOAD_CMD	client.cpp	26;"	d	file:
+UPLOAD_CMD	server.cpp	29;"	d	file:
+USER_OR_PASS_WRONG	server.cpp	36;"	d	file:
 add_private_file	server.cpp	/^void add_private_file(user_t *user, char *filename)$/;"	f
 add_private_files	server.cpp	/^void add_private_files(user_t *user)$/;"	f
 add_shared_files	server.cpp	/^void add_shared_files(user_t *user) {$/;"	f
@@ -47,15 +52,18 @@ client_addr	server.cpp	/^struct sockaddr_in client_addr;$/;"	v	typeref:struct:so
 client_file_fd	client.cpp	/^int client_file_fd;$/;"	v
 client_sock	server.cpp	/^int client_sock;$/;"	v
 create_user_directories	server.cpp	/^void create_user_directories()$/;"	f
+drop_file_if_exists	server.cpp	/^void drop_file_if_exists(char *username, char *filename)$/;"	f
 fd	server.cpp	/^	int fd;$/;"	m	struct:user	file:
 fdmax	client.cpp	/^int fdmax;$/;"	v
 fdmax	server.cpp	/^ int fdmax;$/;"	v
 file	server.cpp	/^typedef struct file {$/;"	s	file:
+file_exists	server.cpp	/^bool file_exists(char *username, char *filename)$/;"	f
 file_exists_in_list	server.cpp	/^bool file_exists_in_list(user_t *user, char *filename)$/;"	f
 file_t	server.cpp	/^} file_t;$/;"	t	typeref:struct:file	file:
 filename	server.cpp	/^	char filename[BUFLEN];$/;"	m	struct:file	file:
 files	server.cpp	/^	file_t **files;$/;"	m	struct:user	file:
 files_no	server.cpp	/^	int files_no;$/;"	m	struct:user	file:
+get_argument	client.cpp	/^void get_argument(char *command, char **out){$/;"	f
 get_command_code	client.cpp	/^int get_command_code(char *command)$/;"	f
 get_command_code	server.cpp	/^int get_command_code(char *command)$/;"	f
 get_file_size	server.cpp	/^int get_file_size(char *folder, char *file)$/;"	f
@@ -72,6 +80,7 @@ main	client.cpp	/^int main(int argc, char ** argv)$/;"	f
 main	server.cpp	/^int main(int argc, char ** argv)$/;"	f
 modified	client.cpp	/^fd_set modified;$/;"	v
 modified	server.cpp	/^ fd_set modified;$/;"	v
+open_file_for_writing	server.cpp	/^FILE *open_file_for_writing(char *username, char *filename)$/;"	f
 original	client.cpp	/^fd_set original;$/;"	v
 original	server.cpp	/^ fd_set original;$/;"	v
 password	server.cpp	/^	char password[BUFLEN];$/;"	m	struct:login_params	file:
@@ -92,4 +101,5 @@ user_t	server.cpp	/^} user_t;$/;"	t	typeref:struct:user	file:
 username	server.cpp	/^	char *username;$/;"	m	struct:user	file:
 username	server.cpp	/^	char username[BUFLEN];$/;"	m	struct:login_params	file:
 users	server.cpp	/^user_t **users;$/;"	v
+users_unique	server.cpp	/^user_t **users_unique;$/;"	v
 write_log	client.cpp	/^void write_log(char *buff)$/;"	f

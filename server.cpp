@@ -1,4 +1,3 @@
-#include <iostream>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,6 +27,8 @@
 #define GET_FILE_LIST_CMD 6
 #define UPLOAD_CMD 7
 #define DOWNLOAD_CMD 8
+#define SHARE_CMD 9
+#define UNSHARE_CMD 10
 
 /*
  * Responses
@@ -35,6 +36,9 @@
 #define SUCCESS 100000
 #define USER_OR_PASS_WRONG -3
 #define ALREADY_LOGGED_IN -2
+#define INEXISTENT_FILE -4
+#define ALREADY_SHARED -6
+#define SHARED_SUCCESSFUL 200
 
 #define NOT_LOGGED_IN -10
 #define LOGOUT_INVALID_USER -1
@@ -129,6 +133,10 @@ int get_command_code(char *command)
 		return GET_FILE_LIST_CMD;
 	else if (strcmp(command, "upload") == 0)
 		return UPLOAD_CMD;
+	else if (strcmp(command, "share") == 0)
+		return SHARE_CMD;
+	else if (strcmp(command, "unshare") == 0)
+		return UNSHARE_CMD;
 
 	return DEFAULT_CMD;
 }
@@ -548,14 +556,39 @@ void drop_file_if_exists(char *username, char *filename)
 	}
 }
 
-FILE *open_file_for_writing(char *username, char *filename)
+int open_file_for_writing(char *username, char *filename)
 {
 	char prev_cwd[BUFLEN];
+	memset(prev_cwd, 0, BUFLEN);
 	getcwd(prev_cwd, BUFLEN);
 	chdir(username);
-	FILE *file = fopen(filename, "wba");
+	struct stat stats;
+	memset(&stats, 0, sizeof(struct stat));
+	stat(filename, &stats); 
+	if (stats.st_size != 0) {
+		getcwd(prev_cwd, BUFLEN);
+		printf("CWD = %s\n", prev_cwd);
+		printf("-9 File already exists\n");
+		return -1;
+	}
+	int fd = open(filename, O_CREAT | O_WRONLY, 0666 );
+	perror("Cannot create file\n");
+	close(fd);
 	chdir(prev_cwd);
-	return file;
+	return fd;
+}
+
+file_t *get_file_by_name(user_t *user, char *filename)
+{
+	int files_no = user->files_no;	
+	if (files_no == 0)
+		return NULL;
+	for (int i = 0; i < files_no; ++i) {
+		if (strcmp(user->files[i]->filename, filename) == 0) {
+			return user->files[i];
+		}
+	}
+	return NULL;
 }
 
 int main(int argc, char ** argv)
@@ -916,6 +949,11 @@ int main(int argc, char ** argv)
 							{
 								char message[CHUNK_SIZE];
 								memset(message, 0, CHUNK_SIZE);
+								if (users == NULL) {
+									printf("Cannot download, not logged in\n");
+									send_client_code(i, NOT_LOGGED_IN); 
+									break;
+								}
 								user_t *user = users[i];
 								if (user == NULL) {
 									printf("Cannot download, not logged in\n");
@@ -923,19 +961,72 @@ int main(int argc, char ** argv)
 									break;
 								}
 
-								/*
-								 * Receive the name
-								 */
-								result = recv(i, message, CHUNK_SIZE, 0);
-								drop_file_if_exists(user->username,message);
-								FILE *file = open_file_for_writing(user->username,message);
-								if (file != NULL) {
+								char filename[BUFLEN];
+								memset(filename, 0, BUFLEN);
+								char *tok;
+								tok = strtok(NULL, " \n");
+								memcpy(filename, tok, strlen(tok));
+								printf("Filename = %s\n", filename);
+								//drop_file_if_exists(user->username,message);
+								int fd = open_file_for_writing(user->username,message);
+								if (fd != -1) {
 									/*
 									 * Start writing
 									 */
+									printf("File is not null\n");
+									close(fd);
+								}else {
+									printf("Cannot create file\n");
 								}
-								fclose(file);
+								memset(buffer, 0, BUFLEN);
+								break;
+							}
+							case SHARE_CMD:
+							{
+								/*
+								 * Get filename 
+								 */
+								char filename[BUFLEN];
+								memset(filename, 0, BUFLEN);
+								char *tok = strtok(NULL, " \n");
+								memcpy(filename, tok, strlen(tok));
+								
+								/*
+								 * Get current user
+								 */
+								user_t * user = users[i];
+								if (user == NULL) {
+									send_client_code(i, UNKNOWN_USER);
+									break;
+								}
 
+								/*
+								 * Find unique user which contains 
+								 * pointers to all the files
+								 * from it's home directory
+								 */
+								user = get_user_by_name(user->username);
+								if (! file_exists(user->username, filename)) {
+									printf("-4 File not found\n");
+									send_client_code(i, INEXISTENT_FILE);
+									break;
+								}else {
+									file_t *file = get_file_by_name(user, filename);
+									if (file->shared == true) {
+										printf("-6 Fisierul este deja partajat\n");
+										send_client_code(i, ALREADY_SHARED); 
+										break;
+									}
+									file->shared = true;
+									char message[BUFLEN];
+									sprintf(message, "200 Fisierul %s a fost partajat.", filename);
+									send_client_code(i, SHARED_SUCCESSFUL);
+									send_client_message(i, message);
+									break;
+
+								}
+									
+								break;
 							}
 							default:
 							{
@@ -952,7 +1043,5 @@ int main(int argc, char ** argv)
 	 * Closing remarks
 	 */
 	close(server_sock);
-	
-	
-	return 0;
+	return 0;	
 }

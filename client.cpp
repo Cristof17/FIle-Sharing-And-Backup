@@ -19,6 +19,10 @@ using namespace std;
 #define SUCCESS 100000
 #define LOGIN_BRUTE_FORCE -8
 #define ALREADY_LOGGED_IN -2
+#define NOT_LOGGED_IN -10
+#define INEXISTENT_FILE -4
+#define ALREADY_SHARED -6
+#define SHARED_SUCCESSFUL 200
 
 
 #define QUIT_CMD 10
@@ -72,6 +76,7 @@ int get_command_code(char *command)
 void get_argument(char *command, char **out){
 	if (*out == NULL)
 		(*out) = (char *)malloc(BUFLEN * sizeof(char));
+	memset(*out, 0, BUFLEN);
 	char copy[BUFLEN];
 	char *tok;
 	memset(copy, 0, BUFLEN);
@@ -199,11 +204,16 @@ int main(int argc, char ** argv)
 					 */
 					char *argument;
 					get_argument(buffer, &argument);
+					printf("File argument is %s\n", argument);
+
 					/*
 					 * If the file exists, fopen should return != NULL
 					 */
 					FILE *file = fopen(argument, "rb");
 					if (file == NULL){
+						/*
+						 * Output file does not exist
+						 */
 						char message[] = "-4 Fisier inexistent";
 						printf("%s\n", message);
 						write_log(message);
@@ -269,7 +279,7 @@ int main(int argc, char ** argv)
 					}
 					case LOGOUT_INVALID_USER:
 					{
-						printf("-1 Clientul nu e autentificat");
+						printf("-1 Clientul nu e autentificat\n");
 						char message[] = "-1 Clientul nu e autentificat\n";
 						write_log(message);
 						memset(buffer, 0, BUFLEN);
@@ -337,9 +347,47 @@ int main(int argc, char ** argv)
 						memset(buffer, 0, BUFLEN);
 						break;
 					}
+					case NOT_LOGGED_IN:
+					{
+						char message[] = "-11 Utilizator inexistent";
+						printf("%s\n", message);
+						write_log(message);
+						memset(buffer, 0, BUFLEN);
+						break;
+					}
 					case UNKNOWN_USER:
 					{
 						printf("-11 Utilizator inexistent\n");
+						memset(buffer, 0, BUFLEN);
+						break;
+					}
+					case ALREADY_SHARED:
+					{
+						char message[BUFLEN];
+						memset(message, 0, BUFLEN);
+						printf("-6 Fisierul este deja partajat\n");
+						write_log(message);
+						memset(buffer, 0, BUFLEN);
+						break;
+					}
+					case SHARED_SUCCESSFUL:
+					{
+						char message[BUFLEN];
+						memset(message, 0, BUFLEN);
+						recv(i, message, BUFLEN, 0);
+						printf("%s\n", message);
+						write_log(message);
+						memset(buffer,0 , BUFLEN);
+						break;
+					}
+					case INEXISTENT_FILE:
+					{
+						char message[BUFLEN];
+						memset(message, 0, BUFLEN);
+						sprintf(message,"-4 Fisier inexistent");
+						printf("-4 Fisier inexistent\n");
+						write_log(message);
+						memset(buffer, 0, BUFLEN);
 						break;
 					}
 					case DEFAULT_CMD:
