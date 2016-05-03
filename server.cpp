@@ -10,6 +10,9 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 
 /*
@@ -39,6 +42,11 @@
  */
 #define BUFLEN 255
 #define MAX_USERS 200
+
+/*
+ * Erros
+ */
+#define FILE_NOT_FOUND -20
 
 using namespace std;
 
@@ -282,7 +290,7 @@ void create_user_directories()
 	user_t **users = (user_t **)malloc(N * sizeof(user_t*));
 	get_users_from_file(users);
 	for (int i = 0; i < N; ++i) {
-		mkdir(users[i]->username, 0644);
+		mkdir(users[i]->username, 0777);
 		if (errno == EEXIST){
 			printf("Directory %s already exists\n", users[i]->username);
 			continue;
@@ -294,6 +302,33 @@ void create_user_directories()
 	}
 }
 
+int get_file_size(char *folder, char *file)
+{
+
+	char *tok;
+	char prev_folder[BUFLEN];
+	getcwd(prev_folder, BUFLEN);
+	chdir(folder);
+
+	struct stat data;
+	memset(&data, 0, sizeof(data));
+
+	char test[BUFLEN];
+	memset(test, 0, BUFLEN);
+	memcpy(test, file, BUFLEN);
+
+	tok = strtok(test, "\n");
+	printf("Filename is %s\n", tok); 
+	int fd = open(tok, O_RDONLY);
+	printf("FD = %d\n", fd);
+	if (fd < 0)
+		return FILE_NOT_FOUND;
+	fstat(fd, &data);
+	close(fd);
+	chdir(prev_folder);
+	return data.st_size;
+}
+
 /*
  * Add shared files for user
  * from the shared_files file
@@ -303,7 +338,8 @@ void add_shared_files(user_t *user) {
 	if (user->files == NULL)
 		user->files = (file_t **)malloc(BUFLEN * sizeof(file_t*));
 	
-	int M;
+	int M = 0;
+	int file_size = 0;
 	fscanf(shared_file, "%d", &M);
 	char line[BUFLEN];
 	memset(line, 0, BUFLEN);
@@ -330,10 +366,22 @@ void add_shared_files(user_t *user) {
 			user->files[user->shared_files_no]->shared = true;
 			memcpy(user->files[user->shared_files_no]->filename, tok, strlen(tok));
 			user->shared_files_no++;
-			printf("Shared file for %s is %s\n", user->username, tok);
+			/*
+			 * Store the size of the files also
+			 * The get_file_size function returns 
+			 * FILE_NOT_FOUND if the file hasn't been found
+			 * but I do not treat this exeption because
+			 * the files are supposed to be there
+			 */ 
+		 	file_size = get_file_size(user->username, tok);
+			user->files[num_files]->size = file_size;
+			printf("Shared file for %s is %s with size %d\n", user->username, tok, file_size);
 		}
 	}
 	fseek(shared_file, 0, SEEK_SET);
+}
+
+void add_private_file(user_t *user, char *filename) {
 }
 
 int main(int argc, char ** argv)
