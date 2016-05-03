@@ -266,7 +266,7 @@ int get_users_from_file_count()
 	return N;
 }
 
-void create_user_directories()
+void create_user_directories_from_shared()
 {
 	/*
 	 * This function creates user directories
@@ -326,6 +326,24 @@ void create_user_directories()
 	printf("CWD = %s and init was %s\n", final_location, init_location);
 }
 
+void create_user_directories()
+{
+	int N = get_users_from_file_count();
+	user_t **users = (user_t **)malloc(N * sizeof(user_t*));
+	get_users_from_file(users);
+	for (int i = 0; i < N; ++i) {
+		mkdir(users[i]->username, 0644);
+		if (errno == EEXIST){
+			printf("Directory %s already exists\n", users[i]->username);
+			continue;
+		}
+		if (errno == EACCES){
+			printf("You do not have access to create %s\n", users[i]->username);
+			continue;
+		}
+	}
+}
+
 int main(int argc, char ** argv)
 {
 	if (argc <= 3){
@@ -346,8 +364,8 @@ int main(int argc, char ** argv)
 	/*
 	 * Create user files
 	 */
-	 create_user_directories();
-	
+	create_user_directories();	
+
 	/*
 	 * Open socket
 	 */
