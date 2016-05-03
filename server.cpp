@@ -28,7 +28,7 @@
 #define UPLOAD_CMD 7
 #define DOWNLOAD_CMD 8
 #define SHARE_CMD 9
-#define UNSHARE_CMD 10
+#define UNSHARE_CMD 12
 
 /*
  * Responses
@@ -39,6 +39,8 @@
 #define INEXISTENT_FILE -4
 #define ALREADY_SHARED -6
 #define SHARED_SUCCESSFUL 200
+#define UNSHARED_SUCCESSFUL 201
+#define ALREADY_PRIVATE -7
 
 #define NOT_LOGGED_IN -10
 #define LOGOUT_INVALID_USER -1
@@ -1012,6 +1014,7 @@ int main(int argc, char ** argv)
 									break;
 								}else {
 									file_t *file = get_file_by_name(user, filename);
+										
 									if (file->shared == true) {
 										printf("-6 Fisierul este deja partajat\n");
 										send_client_code(i, ALREADY_SHARED); 
@@ -1023,7 +1026,53 @@ int main(int argc, char ** argv)
 									send_client_code(i, SHARED_SUCCESSFUL);
 									send_client_message(i, message);
 									break;
+								}
+									
+								break;
+							}
+							case UNSHARE_CMD:
+							{
+								/*
+								 * Get filename 
+								 */
+								char filename[BUFLEN];
+								memset(filename, 0, BUFLEN);
+								char *tok = strtok(NULL, " \n");
+								memcpy(filename, tok, strlen(tok));
+								
+								/*
+								 * Get current user
+								 */
+								user_t * user = users[i];
+								if (user == NULL) {
+									send_client_code(i, UNKNOWN_USER);
+									break;
+								}
 
+								/*
+								 * Find unique user which contains 
+								 * pointers to all the files
+								 * from it's home directory
+								 */
+								user = get_user_by_name(user->username);
+								if (! file_exists(user->username, filename)) {
+									printf("-4 File not found\n");
+									send_client_code(i, INEXISTENT_FILE);
+									break;
+								}else {
+									file_t *file = get_file_by_name(user, filename);
+										
+									if (file->shared == false) {
+										printf("-7 Fisier deja privat\n");
+										send_client_code(i, ALREADY_PRIVATE); 
+										break;
+									}
+									file->shared = false;
+									char message[BUFLEN];
+									sprintf(message, "200 Fisierul %s a fost setat ca PRIVATE", filename);
+									send_client_code(i, UNSHARED_SUCCESSFUL);
+									send_client_message(i, message);
+									break;
 								}
 									
 								break;

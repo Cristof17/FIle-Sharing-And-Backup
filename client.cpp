@@ -23,6 +23,8 @@ using namespace std;
 #define INEXISTENT_FILE -4
 #define ALREADY_SHARED -6
 #define SHARED_SUCCESSFUL 200
+#define UNSHARED_SUCCESSFUL 201
+#define ALREADY_PRIVATE -7
 
 
 #define QUIT_CMD 10
@@ -386,6 +388,25 @@ int main(int argc, char ** argv)
 						memset(message, 0, BUFLEN);
 						sprintf(message,"-4 Fisier inexistent");
 						printf("-4 Fisier inexistent\n");
+						write_log(message);
+						memset(buffer, 0, BUFLEN);
+						break;
+					}
+					case UNSHARED_SUCCESSFUL:
+					{
+						char message[BUFLEN];
+						memset(message, 0, BUFLEN);
+						recv(i, message, BUFLEN, 0);
+						printf("%s\n", message);
+						write_log(message);
+						memset(buffer,0 , BUFLEN);
+						break;
+					}
+					case ALREADY_PRIVATE:
+					{
+						char message[BUFLEN];
+						memset(message, 0, BUFLEN);
+						printf("-7 Fisier deja privat\n");
 						write_log(message);
 						memset(buffer, 0, BUFLEN);
 						break;
