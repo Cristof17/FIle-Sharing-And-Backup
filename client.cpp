@@ -23,6 +23,7 @@ using namespace std;
 
 #define QUIT_CMD 10
 #define DEFAULT_CMD 1
+#define UPLOAD_CMD 2
 
 #define LOGOUT_INVALID_USER -1
 #define LOGOUT_SUCCESSFUL 1001
@@ -63,7 +64,21 @@ int get_command_code(char *command)
 	if (strcmp (tok, "quit") == 0) {
 		return QUIT_CMD;
 	}
+	if (strcmp (tok, "upload") == 0)
+		return UPLOAD_CMD;
 	return DEFAULT_CMD;
+}
+
+void get_argument(char *command, char **out){
+	if (*out == NULL)
+		(*out) = (char *)malloc(BUFLEN * sizeof(char));
+	char copy[BUFLEN];
+	char *tok;
+	memset(copy, 0, BUFLEN);
+	memcpy(copy, command, BUFLEN);
+	tok = strtok(copy, " \n");
+	tok = strtok(NULL, " \n");
+	memcpy((*out),tok, strlen(tok)); 
 }
 
 bool check_buffer_empty(char *buffer)
@@ -177,6 +192,25 @@ int main(int argc, char ** argv)
 				if (get_command_code(buffer) == QUIT_CMD) {
 					close(sockfd);
 					exit(0);
+				}
+				if (get_command_code(buffer) == UPLOAD_CMD) {
+					/*
+					 * Get the argument of the upload command
+					 */
+					char *argument;
+					get_argument(buffer, &argument);
+					/*
+					 * If the file exists, fopen should return != NULL
+					 */
+					FILE *file = fopen(argument, "rb");
+					if (file == NULL){
+						char message[] = "-4 Fisier inexistent";
+						printf("%s\n", message);
+						write_log(message);
+						memset(buffer, 0, BUFLEN);
+						continue;
+					}
+					fclose(file);
 				}
 				/*
 				 * Send the command to server

@@ -26,6 +26,8 @@
 #define LOGOUT_CMD 4
 #define GET_USER_LIST_CMD 5
 #define GET_FILE_LIST_CMD 6
+#define UPLOAD_CMD 7
+#define DOWNLOAD_CMD 8
 
 /*
  * Responses
@@ -34,6 +36,7 @@
 #define USER_OR_PASS_WRONG -3
 #define ALREADY_LOGGED_IN -2
 
+#define NOT_LOGGED_IN -10
 #define LOGOUT_INVALID_USER -1
 #define UNKNOWN_USER -11
 #define LOGOUT_SUCCESSFUL 1001
@@ -47,6 +50,7 @@
  */
 #define BUFLEN 255
 #define MAX_USERS 200
+#define CHUNK_SIZE 4096
 
 /*
  * Erros
@@ -123,6 +127,8 @@ int get_command_code(char *command)
 		return GET_USER_LIST_CMD;
 	else if (strcmp(command, "getfilelist") == 0)
 		return GET_FILE_LIST_CMD;
+	else if (strcmp(command, "upload") == 0)
+		return UPLOAD_CMD;
 
 	return DEFAULT_CMD;
 }
@@ -516,6 +522,42 @@ user_t *get_user_by_name(char *name)
 	return NULL;
 }
 
+bool file_exists(char *username, char *filename)
+{	
+	DIR *dir = opendir(username);
+	if (dir == NULL)
+		return false;
+	struct dirent *ent;
+	while ((ent = readdir(dir)) != NULL) {
+		if (strcmp (ent->d_name, filename) == 0) {
+			return true;
+		}
+	}
+	return false;	
+	closedir(dir);
+}
+
+void drop_file_if_exists(char *username, char *filename)
+{
+	char prev_cwd[BUFLEN];
+	getcwd(prev_cwd, BUFLEN);
+	if (file_exists(username, filename)){
+		chdir(username);
+		unlink(filename);
+		chdir(prev_cwd);
+	}
+}
+
+FILE *open_file_for_writing(char *username, char *filename)
+{
+	char prev_cwd[BUFLEN];
+	getcwd(prev_cwd, BUFLEN);
+	chdir(username);
+	FILE *file = fopen(filename, "wba");
+	chdir(prev_cwd);
+	return file;
+}
+
 int main(int argc, char ** argv)
 {
 	if (argc <= 3){
@@ -862,13 +904,38 @@ int main(int argc, char ** argv)
 									else
 										sprintf(shared_text, "PRIVATE");
 									memset(message, 0, BUFLEN);
-									sprintf(message, "%s\t %ld\t", user->files[j]->filename,
+									sprintf(message, "%s\t %ld bytes\t", user->files[j]->filename,
 																  user->files[j]->size);
 									strcat(message, shared_text);
 									printf("Sending client message: %s\n", message);
 									send_client_message(i, message);
 								}
 								break;
+							}
+							case UPLOAD_CMD:
+							{
+								char message[CHUNK_SIZE];
+								memset(message, 0, CHUNK_SIZE);
+								user_t *user = users[i];
+								if (user == NULL) {
+									printf("Cannot download, not logged in\n");
+									send_client_code(i, NOT_LOGGED_IN); 
+									break;
+								}
+
+								/*
+								 * Receive the name
+								 */
+								result = recv(i, message, CHUNK_SIZE, 0);
+								drop_file_if_exists(user->username,message);
+								FILE *file = open_file_for_writing(user->username,message);
+								if (file != NULL) {
+									/*
+									 * Start writing
+									 */
+								}
+								fclose(file);
+
 							}
 							default:
 							{
