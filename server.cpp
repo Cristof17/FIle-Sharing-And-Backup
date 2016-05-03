@@ -7,6 +7,9 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <string.h>
+#include <errno.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 
 /*
@@ -263,6 +266,66 @@ int get_users_from_file_count()
 	return N;
 }
 
+void create_user_directories()
+{
+	/*
+	 * This function creates user directories
+	 * based on shared_files file
+	 */
+	int M = 0;
+	char init_location[BUFLEN];
+	char final_location[BUFLEN];
+	memset(init_location, 0, BUFLEN);
+	memset(final_location, 0, BUFLEN);
+	fseek(shared_file, 0, SEEK_SET);
+	fscanf(shared_file, "%d", &M);
+	/*
+	 * parse each line in shared_file
+	 */
+
+	/*
+	 * Get initial working directory to
+	 * compare with the final one to know if there 
+	 * is the need to return one folder back
+	 */
+	getcwd(init_location, BUFLEN);
+	char line[BUFLEN];
+	memset(line, 0, BUFLEN);
+	char *tok;
+	for (int i = 0; i < M; ++i){
+		fscanf(shared_file, "%s", line);
+		tok = strtok(line, ":");
+		mkdir(tok, 0644);
+		if (errno == EEXIST){
+			printf("Folder %s already exists\n", tok);
+			continue;
+		}
+		if (errno == EACCES){
+			printf("You don't have permission to create file %s\n", tok);
+			continue;
+		}
+		/*
+		 * Check if the file exists
+		 */
+		chdir(tok);
+		tok = strtok(NULL, " ");
+		FILE *shared_file = fopen(tok,"r+");
+		if (shared_file == NULL) {
+			printf("Shared file %s does not exists\n", tok);
+			continue;
+		}
+	}
+	/*
+	 * Compare final current working directory and
+	 * initial current working directory
+	 */
+	getcwd(final_location, BUFLEN);
+	if (strcmp(init_location, final_location) != 0) {
+		chdir("../");
+	}
+	printf("CWD = %s and init was %s\n", final_location, init_location);
+}
+
 int main(int argc, char ** argv)
 {
 	if (argc <= 3){
@@ -279,6 +342,11 @@ int main(int argc, char ** argv)
 	shared_file = fopen(argv[3],"r");
 	if(shared_file == NULL)
 		perror("Cannot open shared_file");
+	
+	/*
+	 * Create user files
+	 */
+	 create_user_directories();
 	
 	/*
 	 * Open socket

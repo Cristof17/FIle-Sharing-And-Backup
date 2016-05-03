@@ -266,6 +266,9 @@ int main(int argc, char ** argv)
 					}
 					case GETUSERLIST_EMPTY:
 					{
+						char message[] = "-1 Cientul nu e autentificat\n";
+						printf("%s", message);
+						write_log(message);
 						break;
 					}
 					case DEFAULT_CMD:
