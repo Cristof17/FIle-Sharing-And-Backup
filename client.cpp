@@ -28,6 +28,9 @@ using namespace std;
 #define LOGOUT_SUCCESSFUL 1001
 #define GETUSERLIST_SUCCESSFUL 1002
 #define GETUSERLIST_EMPTY 1003
+#define GETFILELIST_SUCCESSFUL 1004
+#define GETFILELIST_FAIL 1005
+#define UNKNOWN_USER -11
 
 /*
  * All about server socket
@@ -269,6 +272,40 @@ int main(int argc, char ** argv)
 						char message[] = "-1 Cientul nu e autentificat\n";
 						printf("%s", message);
 						write_log(message);
+						break;
+					}
+					case GETFILELIST_SUCCESSFUL:
+					{
+						int N = 0;
+						/*
+						 * Receive the count
+						 */
+						 memset(buffer, 0, BUFLEN);
+						 recv(i, buffer, BUFLEN, 0);
+						 N = atoi(buffer);
+						 printf("Received message %s\n", buffer);
+						 /*
+						  * For each file receive a line
+						  * containing all the infos
+						  */
+						for (int j = 0; j < N; ++j) {
+							memset(buffer, 0, BUFLEN);
+							recv(i, buffer, BUFLEN, 0);
+							printf("Receiving %s\n",buffer);
+							printf("%s\n", buffer);
+							write_log(buffer);
+						}
+						memset(buffer, 0, BUFLEN);
+						break;
+					}
+					case GETFILELIST_FAIL:
+					{
+						printf("User has no files");
+						break;
+					}
+					case UNKNOWN_USER:
+					{
+						printf("-11 Utilizator inexistent\n");
 						break;
 					}
 					case DEFAULT_CMD:

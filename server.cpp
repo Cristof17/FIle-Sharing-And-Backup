@@ -25,6 +25,7 @@
 #define QUIT_CMD 3
 #define LOGOUT_CMD 4
 #define GET_USER_LIST_CMD 5
+#define GET_FILE_LIST_CMD 6
 
 /*
  * Responses
@@ -34,9 +35,12 @@
 #define ALREADY_LOGGED_IN -2
 
 #define LOGOUT_INVALID_USER -1
+#define UNKNOWN_USER -11
 #define LOGOUT_SUCCESSFUL 1001
 #define GETUSERLIST_SUCCESSFUL 1002
 #define GETUSERLIST_EMPTY 1003
+#define GETFILELIST_SUCCESSFUL 1004
+#define GETFILELIST_FAIL 1005
 
 /*
  * Globals
@@ -108,6 +112,8 @@ int get_command_code(char *command)
 		return LOGOUT_CMD;
 	else if (strcmp(command, "getuserlist") == 0)
 		return GET_USER_LIST_CMD;
+	else if (strcmp(command, "getfilelist") == 0)
+		return GET_FILE_LIST_CMD;
 
 	return DEFAULT_CMD;
 }
@@ -758,6 +764,66 @@ int main(int argc, char ** argv)
 										 */
 										send_client_message(i, output_users[j]->username);
 									}
+								}
+								break;
+							}
+							case GET_FILE_LIST_CMD:
+							{
+								char *username = strtok(NULL, " ");	
+								printf("Username to get files from is %s\n", username);
+								/*
+								 * Get the user
+								 */
+								user_t *user = users[i];
+								if (user == NULL) {
+									send_client_code(i, UNKNOWN_USER);
+									break;
+								}
+								/*
+								 * Send the number of files
+								 */
+								int files_no = user->files_no;
+								char message[BUFLEN];
+								memset(message, 0, BUFLEN);
+								/*
+								 * No file has been added to a user
+								 */
+								if (files_no == 0){
+									/*
+									 * Send fail message
+									 */
+									send_client_code(i, GETFILELIST_FAIL);
+									break;
+								}
+
+								/*
+								 * Send fail message
+								 */
+								send_client_code(i, GETFILELIST_SUCCESSFUL);
+								/*
+								 * Send files count
+								 */ 
+								sprintf(message, "%d", files_no);
+								send_client_message(i, message);
+
+								printf("Sending number of files\n");
+								/*
+								 * Send each file name + size + SHARED/PRIVATE
+								 */
+								for(int j = 0; j <= files_no; ++j) {
+									char shared_text[BUFLEN];
+									memset(shared_text, 0, BUFLEN);
+									int shared = user->files[j]->shared;	
+									if (shared)
+										sprintf(shared_text, "SHARED");
+									else
+										sprintf(shared_text, "PRIVATE");
+									memset(message, 0, BUFLEN);
+									sprintf(message, "%s\t %ld\t", user->files[j]->filename,
+																  user->files[j]->size);
+									strcat(message, shared_text);
+									printf("Sending client message: %s\n", message);
+									send_client_message(i, message);
 								}
 								break;
 							}
