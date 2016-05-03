@@ -13,6 +13,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <dirent.h>
 
 
 /*
@@ -63,7 +64,7 @@ typedef struct file {
 
 typedef struct user{
 	int fd;
-	int shared_files_no;
+	int files_no;
 	char *username;
 	file_t **files;
 } user_t;
@@ -318,9 +319,7 @@ int get_file_size(char *folder, char *file)
 	memcpy(test, file, BUFLEN);
 
 	tok = strtok(test, "\n");
-	printf("Filename is %s\n", tok); 
 	int fd = open(tok, O_RDONLY);
-	printf("FD = %d\n", fd);
 	if (fd < 0)
 		return FILE_NOT_FOUND;
 	fstat(fd, &data);
@@ -354,18 +353,18 @@ void add_shared_files(user_t *user) {
 		fgets(line, BUFLEN, shared_file);	
 		tok = strtok(line, ":");
 		if (strcmp(user->username, tok) == 0) {
-			tok = strtok(NULL, ":");
+			tok = strtok(NULL, ":\n");
 			/*
 			 * Check if the file we want to add has been
 			 * allocated
 			 */
-			int num_files = user->shared_files_no;
+			int num_files = user->files_no;
 			if (user->files[num_files] == NULL)// the last file in the list of files
 				user->files[num_files] = (file_t *)malloc(1 * sizeof(file_t));
 
-			user->files[user->shared_files_no]->shared = true;
-			memcpy(user->files[user->shared_files_no]->filename, tok, strlen(tok));
-			user->shared_files_no++;
+			user->files[user->files_no]->shared = true;
+			memcpy(user->files[user->files_no]->filename, tok, strlen(tok));
+			user->files_no++;
 			/*
 			 * Store the size of the files also
 			 * The get_file_size function returns 
@@ -381,7 +380,108 @@ void add_shared_files(user_t *user) {
 	fseek(shared_file, 0, SEEK_SET);
 }
 
-void add_private_file(user_t *user, char *filename) {
+void add_private_file(user_t *user, char *filename)
+{
+	/*
+	 * Check if files array is NULL
+	 */
+	if (user->files == NULL)
+		user->files = (file_t **)malloc (BUFLEN * sizeof(file_t *));
+	int last_file_index = user->files_no;	
+	if (user->files[last_file_index] == NULL)
+		user->files[last_file_index] = (file_t *)malloc (1* sizeof(file_t));
+	memcpy(user->files[last_file_index], filename, strlen(filename));
+	user->files[last_file_index]->shared = false;
+	char curr_dir[] = "./";
+	user->files[last_file_index]->size = get_file_size(curr_dir, filename);
+	user->files_no++;
+	printf("Added file %s , shared %d, size %ld\n", user->files[last_file_index]->filename,
+												   user->files[last_file_index]->shared,
+												   user->files[last_file_index]->size);
+}
+
+bool file_exists_in_list(user_t *user, char *filename)
+{
+	/*
+	 * Iterate through each file 
+	 * and check the name
+	 * If strcmp == 0 the file has been
+	 * added in the list and there is no point to add it again
+	 */
+	int n = user->files_no;
+	if (n == 0)
+		return false;
+	if (user == NULL)
+		return false;
+	for (int i = 0; i < n ; ++i) {
+		if (user->files[i] == NULL)
+			continue;
+		printf("Comparing %s with %s\n", user->files[i]->filename, filename);
+		if (strcmp (user->files[i]->filename, filename) == 0)
+			return true;
+	}
+	return false;
+}
+
+
+/*
+ * Get into the user folder
+ * get each file using readdir function
+ * except ./ and ../
+ * and add them using add_private_file(user, filename)
+ * to the list of files for a given user
+ */
+void add_private_files(user_t *user)
+{
+	/*
+	 * The directory of the user
+	 */
+	DIR *dir;
+	struct dirent *ent;
+	/*
+	 * Save the current working directory
+	 */
+	char prev_cwd[BUFLEN];
+	memset(prev_cwd, 0, BUFLEN);
+	getcwd(prev_cwd, BUFLEN);
+	/*
+	 * Get size for a file 
+	 */
+	dir = opendir(user->username);
+	if (dir == NULL){
+		printf("ERROR opening folder for reading files from %s\n", user->username);
+		return;
+	}
+
+	chdir(user->username);
+	while ((ent = readdir(dir)) != NULL) {
+	
+		int fd = open(ent->d_name, O_RDONLY);
+		if (fd < 0) {
+			printf("Cannot find file %s\n", ent->d_name);
+			continue;
+		}
+		if (strcmp(ent->d_name, ".") == 0)
+			continue;
+		if (strcmp(ent->d_name, "..") == 0)
+			continue;
+		if (file_exists_in_list(user, ent->d_name))
+			continue;
+	
+		char folder[] = "./";
+		int size = get_file_size(folder,ent->d_name); 
+		/*
+		 * Create the file and add it to the list
+		 */
+		if (user->files[user->files_no] == NULL)
+			user->files[user->files_no] = (file_t*) malloc (1 * sizeof(file_t));
+		memset(user->files[user->files_no], 0, sizeof(file_t));
+		memcpy(user->files[user->files_no]->filename, ent->d_name, strlen(ent->d_name));
+		user->files[user->files_no]->shared = false;
+		user->files[user->files_no]->size = size;
+
+		printf("FILE %s in folder %s with size %d\n", ent->d_name, user->username, size);
+	}
 }
 
 int main(int argc, char ** argv)
@@ -551,11 +651,12 @@ int main(int argc, char ** argv)
 											user_t *new_user = (user_t *)malloc(1 * sizeof(user_t));
 											new_user->username = (char *)malloc(BUFLEN *sizeof(char));
 											new_user->fd = i;
-											new_user->shared_files_no = 0;
+											new_user->files_no = 0;
 											new_user->files = NULL;
 											memcpy(new_user->username, params.username, BUFLEN);
 											users[i] = new_user;
 											add_shared_files(users[i]);
+											add_private_files(users[i]);
 											printf("New user->fd = %d\n", new_user->fd);
 											printf("New user->username = %s\n", new_user->username);
 											send(i, params.username, BUFLEN, 0);
