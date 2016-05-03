@@ -102,6 +102,15 @@ int login_attempt;
 
 user_t **users;
 
+/*
+ * These are for getting file information 
+ * from folders because each user
+ * has an array of files, that it can access
+ * and by having the array of unique users
+ * I can print all the files from a user folder
+ */
+user_t **users_unique;
+
 int get_command_code(char *command)
 {
 	if (strcmp(command, "login") == 0)
@@ -485,9 +494,26 @@ void add_private_files(user_t *user)
 		memcpy(user->files[user->files_no]->filename, ent->d_name, strlen(ent->d_name));
 		user->files[user->files_no]->shared = false;
 		user->files[user->files_no]->size = size;
+		user->files_no++;
 
 		printf("FILE %s in folder %s with size %d\n", ent->d_name, user->username, size);
 	}
+	chdir(prev_cwd);
+}
+
+user_t *get_user_by_name(char *name)
+{
+	int users_count = get_users_from_file_count();
+	if (name == NULL)
+		return NULL;
+	for (int i = 0; i < users_count; ++i) {
+		if (users_unique[i] == NULL)
+			continue;
+		if (strcmp(users_unique[i]->username, name) == 0){
+			return users_unique[i];
+		}
+	}
+	return NULL;
 }
 
 int main(int argc, char ** argv)
@@ -559,6 +585,21 @@ int main(int argc, char ** argv)
 	FD_SET(STDIN_FILENO, &original);
 
 
+
+	/*
+	 * Create unique users list
+	 */
+	if (users_unique == NULL)
+		users_unique = (user_t **)malloc(MAX_USERS * sizeof(user_t *));
+	get_users_from_file(users_unique);
+	int user_count = get_users_from_file_count();
+	for (int j = 0; j < user_count; ++j) {
+		add_shared_files(users_unique[j]);
+		add_private_files(users_unique[j]);
+	}
+	
+
+	
 	/*
 	 * Listen for incoming connections
 	 */
@@ -769,12 +810,13 @@ int main(int argc, char ** argv)
 							}
 							case GET_FILE_LIST_CMD:
 							{
-								char *username = strtok(NULL, " ");	
+								char *username = strtok(NULL, " \n");	
 								printf("Username to get files from is %s\n", username);
 								/*
 								 * Get the user
 								 */
-								user_t *user = users[i];
+								user_t *user;
+								user = get_user_by_name(username);
 								if (user == NULL) {
 									send_client_code(i, UNKNOWN_USER);
 									break;
@@ -810,7 +852,8 @@ int main(int argc, char ** argv)
 								/*
 								 * Send each file name + size + SHARED/PRIVATE
 								 */
-								for(int j = 0; j <= files_no; ++j) {
+								printf("Requested %d files\n", files_no);
+								for(int j = 0; j < files_no; ++j) {
 									char shared_text[BUFLEN];
 									memset(shared_text, 0, BUFLEN);
 									int shared = user->files[j]->shared;	

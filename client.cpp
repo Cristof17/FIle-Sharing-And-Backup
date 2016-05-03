@@ -291,7 +291,6 @@ int main(int argc, char ** argv)
 						for (int j = 0; j < N; ++j) {
 							memset(buffer, 0, BUFLEN);
 							recv(i, buffer, BUFLEN, 0);
-							printf("Receiving %s\n",buffer);
 							printf("%s\n", buffer);
 							write_log(buffer);
 						}
@@ -300,7 +299,8 @@ int main(int argc, char ** argv)
 					}
 					case GETFILELIST_FAIL:
 					{
-						printf("User has no files");
+						printf("User has no files\n");
+						memset(buffer, 0, BUFLEN);
 						break;
 					}
 					case UNKNOWN_USER:
