@@ -47,9 +47,17 @@ typedef struct login_params {
 	char password[BUFLEN];
 } login_params_t;
 
+typedef struct file {
+	char filename[BUFLEN];
+	long size;
+	bool shared;
+} file_t;
+
 typedef struct user{
 	int fd;
+	int shared_files_no;
 	char *username;
+	file_t **files;
 } user_t;
 
 int server_sock;
@@ -103,6 +111,8 @@ int login(login_params_t *params)
 	char pass[BUFLEN];//read pass from file
 	memset(user, 0, BUFLEN);
 	memset(pass, 0, BUFLEN);
+
+	fseek(user_file, 0, SEEK_SET);
 
 	fscanf(user_file, "%d", &N);
 	for (int i = 0; i < N; ++i) {
@@ -266,66 +276,6 @@ int get_users_from_file_count()
 	return N;
 }
 
-void create_user_directories_from_shared()
-{
-	/*
-	 * This function creates user directories
-	 * based on shared_files file
-	 */
-	int M = 0;
-	char init_location[BUFLEN];
-	char final_location[BUFLEN];
-	memset(init_location, 0, BUFLEN);
-	memset(final_location, 0, BUFLEN);
-	fseek(shared_file, 0, SEEK_SET);
-	fscanf(shared_file, "%d", &M);
-	/*
-	 * parse each line in shared_file
-	 */
-
-	/*
-	 * Get initial working directory to
-	 * compare with the final one to know if there 
-	 * is the need to return one folder back
-	 */
-	getcwd(init_location, BUFLEN);
-	char line[BUFLEN];
-	memset(line, 0, BUFLEN);
-	char *tok;
-	for (int i = 0; i < M; ++i){
-		fscanf(shared_file, "%s", line);
-		tok = strtok(line, ":");
-		mkdir(tok, 0644);
-		if (errno == EEXIST){
-			printf("Folder %s already exists\n", tok);
-			continue;
-		}
-		if (errno == EACCES){
-			printf("You don't have permission to create file %s\n", tok);
-			continue;
-		}
-		/*
-		 * Check if the file exists
-		 */
-		chdir(tok);
-		tok = strtok(NULL, " ");
-		FILE *shared_file = fopen(tok,"r+");
-		if (shared_file == NULL) {
-			printf("Shared file %s does not exists\n", tok);
-			continue;
-		}
-	}
-	/*
-	 * Compare final current working directory and
-	 * initial current working directory
-	 */
-	getcwd(final_location, BUFLEN);
-	if (strcmp(init_location, final_location) != 0) {
-		chdir("../");
-	}
-	printf("CWD = %s and init was %s\n", final_location, init_location);
-}
-
 void create_user_directories()
 {
 	int N = get_users_from_file_count();
@@ -342,6 +292,48 @@ void create_user_directories()
 			continue;
 		}
 	}
+}
+
+/*
+ * Add shared files for user
+ * from the shared_files file
+ */
+void add_shared_files(user_t *user) {
+	
+	if (user->files == NULL)
+		user->files = (file_t **)malloc(BUFLEN * sizeof(file_t*));
+	
+	int M;
+	fscanf(shared_file, "%d", &M);
+	char line[BUFLEN];
+	memset(line, 0, BUFLEN);
+	char *tok;
+	/*
+	 * Jump over the first line in the file
+	 * Parse the lines with username and file
+	 */
+	fgets(line, BUFLEN, shared_file);
+
+	for (int i = 0; i < M; ++i) {
+		fgets(line, BUFLEN, shared_file);	
+		tok = strtok(line, ":");
+		if (strcmp(user->username, tok) == 0) {
+			tok = strtok(NULL, ":");
+			/*
+			 * Check if the file we want to add has been
+			 * allocated
+			 */
+			int num_files = user->shared_files_no;
+			if (user->files[num_files] == NULL)// the last file in the list of files
+				user->files[num_files] = (file_t *)malloc(1 * sizeof(file_t));
+
+			user->files[user->shared_files_no]->shared = true;
+			memcpy(user->files[user->shared_files_no]->filename, tok, strlen(tok));
+			user->shared_files_no++;
+			printf("Shared file for %s is %s\n", user->username, tok);
+		}
+	}
+	fseek(shared_file, 0, SEEK_SET);
 }
 
 int main(int argc, char ** argv)
@@ -511,8 +503,11 @@ int main(int argc, char ** argv)
 											user_t *new_user = (user_t *)malloc(1 * sizeof(user_t));
 											new_user->username = (char *)malloc(BUFLEN *sizeof(char));
 											new_user->fd = i;
+											new_user->shared_files_no = 0;
+											new_user->files = NULL;
 											memcpy(new_user->username, params.username, BUFLEN);
 											users[i] = new_user;
+											add_shared_files(users[i]);
 											printf("New user->fd = %d\n", new_user->fd);
 											printf("New user->username = %s\n", new_user->username);
 											send(i, params.username, BUFLEN, 0);
