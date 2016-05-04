@@ -413,6 +413,7 @@ void add_shared_files(user_t *user) {
 		}
 	}
 	fseek(shared_file, 0, SEEK_SET);
+	printf("Exiting add shared files\n");
 }
 
 void add_private_file(user_t *user, char *filename)
@@ -615,14 +616,18 @@ void delete_file_from_register(user_t *user, char *filename)
 	for (int i = 0; i < files_no; ++i) {
 		file_t *file = user->files[i];
 		if(strcmp(file->filename, filename) == 0) {
+			 printf("I = %d,files_no = %d\n", i, files_no);
 			/*
 			 * Move everything from the right 
 			 * one position to the left
 			 */
 			for(int j = i; j < files_no - 1; ++j) {
-			 	memcpy(user->files[j], user->files[j +1], sizeof(file_t));
+				file_t *destination = user->files[j];
+				file_t *source = user->files[j +1];
+			 	memcpy(destination, source, sizeof(file_t));
 			}
-			memset(user->files[files_no], 0, sizeof(file_t));
+			memset(user->files[files_no-1], 0, sizeof(file_t));
+			user->files_no--;
 			return;
 		}
 	}
@@ -1120,15 +1125,31 @@ int main(int argc, char ** argv)
 								 * Get current user by translating
 								 * the fd to username
 								 */
-								user_t * user = users[i];
+								if (users == NULL) {
+									printf("User is null\n");
+									send_client_code(i, UNKNOWN_USER);
+									break;
+								}
+
+								user_t *user = users[i];
+								printf("Getting user%s\n", user->username);
+								if (user == NULL) {
+									printf("User is null\n");
+									send_client_code(i, UNKNOWN_USER);
+									break;
+								}
 								/*
-								 * Get the user struct which
+								 * Get the user struct user_t from the unique_users which
 								 * holds references to all the files
 								 * from the user home dir
 								 */
 								user = get_user_by_name(user->username);
 								if (user == NULL) {
 									send_client_code(i, UNKNOWN_USER);
+									break;
+								}
+								if (! file_exists(user->username, filename)) {
+									send_client_code(i, INEXISTENT_FILE);	
 									break;
 								}
 								delete_file_from_disk(user->username, filename);
