@@ -29,6 +29,7 @@
 #define DOWNLOAD_CMD 8
 #define SHARE_CMD 9
 #define UNSHARE_CMD 12
+#define DELETE_CMD 13
 
 /*
  * Responses
@@ -41,6 +42,7 @@
 #define SHARED_SUCCESSFUL 200
 #define UNSHARED_SUCCESSFUL 201
 #define ALREADY_PRIVATE -7
+#define DELETE_SUCCESSFUL 202
 
 #define NOT_LOGGED_IN -10
 #define LOGOUT_INVALID_USER -1
@@ -139,6 +141,8 @@ int get_command_code(char *command)
 		return SHARE_CMD;
 	else if (strcmp(command, "unshare") == 0)
 		return UNSHARE_CMD;
+	else if (strcmp(command, "delete") == 0)
+		return DELETE_CMD;
 
 	return DEFAULT_CMD;
 }
@@ -591,6 +595,37 @@ file_t *get_file_by_name(user_t *user, char *filename)
 		}
 	}
 	return NULL;
+}
+
+void delete_file_from_disk(char *username, char *filename)
+{
+	char prev_cwd[BUFLEN];
+	memset(prev_cwd, 0, BUFLEN);
+	getcwd(prev_cwd, BUFLEN);
+	chdir(username);
+	unlink(filename);
+	chdir(prev_cwd);
+}
+
+void delete_file_from_register(user_t *user, char *filename)
+{
+	int files_no = user->files_no;
+	if(files_no == 0)
+		return;
+	for (int i = 0; i < files_no; ++i) {
+		file_t *file = user->files[i];
+		if(strcmp(file->filename, filename) == 0) {
+			/*
+			 * Move everything from the right 
+			 * one position to the left
+			 */
+			for(int j = i; j < files_no - 1; ++j) {
+			 	memcpy(user->files[j], user->files[j +1], sizeof(file_t));
+			}
+			memset(user->files[files_no], 0, sizeof(file_t));
+			return;
+		}
+	}
 }
 
 int main(int argc, char ** argv)
@@ -1075,6 +1110,32 @@ int main(int argc, char ** argv)
 									break;
 								}
 									
+								break;
+							}
+							case DELETE_CMD:
+							{
+								char *filename = strtok(NULL, " \n");
+								char message[] = "200 Fisier sters";
+								/*
+								 * Get current user by translating
+								 * the fd to username
+								 */
+								user_t * user = users[i];
+								/*
+								 * Get the user struct which
+								 * holds references to all the files
+								 * from the user home dir
+								 */
+								user = get_user_by_name(user->username);
+								if (user == NULL) {
+									send_client_code(i, UNKNOWN_USER);
+									break;
+								}
+								delete_file_from_disk(user->username, filename);
+								delete_file_from_register(user, filename);
+								printf("Ajung aici \n");
+								send_client_code(i, DELETE_SUCCESSFUL); 
+								send_client_message(i, message);
 								break;
 							}
 							default:
